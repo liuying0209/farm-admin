@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.farm.admin.admin.mapper.AdminMapper">
+
+    <resultMap id="adminResultMap" type="com.farm.admin.admin.Admin">
+        <id column="id" property="id"/>
+        <result column="level_id" property="levelId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="username" property="username"/>
+        <result column="is_password" property="isPassword"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="mobile" property="mobile"/>
+        <result column="status" property="status"/>
+        <result column="is_administrator" property="isAdministrator"/>
+        <result column="create_time" property="createDate"/>
+        <result column="update_time" property="updateDate"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.farm.admin.admin.Admin" useGeneratedKeys="true" keyProperty="id" >
+        insert into crm_admin
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="id != null" >
+                id,
+            </if>
+            <if test="levelId != null" >
+                level_id,
+            </if>
+            <if test="parentId != null" >
+                parent_id,
+            </if>
+            <if test="username != null" >
+                username,
+            </if>
+            <if test="password != null" >
+                password,
+            </if>
+            <if test="email != null" >
+                email,
+            </if>
+            <if test="mobile != null" >
+                mobile,
+            </if>
+            <if test="isAdministrator != null" >
+                is_administrator,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="id != null" >
+                #{id},
+            </if>
+            <if test="levelId != null" >
+                #{levelId},
+            </if>
+            <if test="parentId != null" >
+                #{parentId},
+            </if>
+            <if test="username != null" >
+                #{username},
+            </if>
+            <if test="password != null" >
+                #{password},
+            </if>
+            <if test="email != null" >
+                #{email},
+            </if>
+            <if test="mobile != null" >
+                #{mobile},
+            </if>
+            <if test="isAdministrator != null" >
+                #{isAdministrator},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="update" parameterType="com.farm.admin.admin.Admin" >
+        update crm_admin
+        <set >
+            <if test="levelId != null" >
+                level_id = #{levelId},
+            </if>
+            <if test="parentId != null" >
+                parent_id = #{parentId},
+            </if>
+            <if test="username != null" >
+                username = #{username},
+            </if>
+            <if test="password != null" >
+                password = #{password},
+            </if>
+            <if test="isPassword != null" >
+                is_password = #{isPassword},
+            </if>
+            <if test="email != null" >
+                email = #{email},
+            </if>
+            <if test="mobile != null" >
+                mobile = #{mobile},
+            </if>
+            <if test="status != null" >
+                status = #{status},
+            </if>
+            <if test="isAdministrator != null" >
+                is_administrator = #{isAdministrator},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="pagingAdmin" resultType="java.util.Map">
+        SELECT
+        pa.id AS admin_id,
+        pa.username AS username,
+        pa.mobile AS mobile,
+        IFNULL(pa.email,'') AS email,
+        IFNULL(pd.name,'') AS deptName,
+        IFNULL(pl.name,'') AS levelName,
+        pa2.username AS parentName,
+        pa.status ,
+        pa.create_time
+        FROM crm_admin pa
+        Left JOIN crm_user_level pl ON pa.level_id = pl.id
+        Left JOIN crm_user_dept pd ON pl.dept_id = pd.id
+        Left JOIN crm_admin pa2 ON pa.parent_id = pa2.id
+        WHERE pa.is_administrator = 0
+        <if test="username!=null and username!=''">
+          and  pa.username=#{username}
+        </if>
+        ORDER BY pa.create_time ASC
+        LIMIT #{pageStart}, #{pageSize}
+    </select>
+
+    <select id="countAdmin"  resultType="java.lang.Integer" parameterType="java.lang.String">
+        SELECT
+        Count(1)
+        FROM crm_admin pa
+        Left JOIN crm_user_level pl ON pa.level_id = pl.id
+        Left JOIN crm_user_dept pd ON pl.dept_id = pd.id
+        Left JOIN crm_admin pa2 ON pa.parent_id = pa2.id
+        WHERE pa.is_administrator = 0
+        <if test="username!=null and username!=''">
+          and  pa.username=#{username}
+        </if>
+
+    </select>
+
+
+    <select id="findCurrentAdmin" resultMap="adminResultMap" parameterType="java.lang.Long">
+       select * from crm_admin where id=#{adminId}
+    </select>
+
+
+
+    <select id="findById" resultType="java.util.Map">
+        SELECT
+        pa.id           AS adminId,
+        pa.username     AS username,
+        pa.mobile       AS mobile,
+        pa.email        AS email,
+        pd.name         AS deptName,
+        pl.name         AS levelName,
+        IFNULL(pa2.username,'')   AS parentName,
+        pd.id           AS deptId,
+        pl.id           AS levelId,
+        pl.grade        AS grade,
+        IFNULL(pa2.id,'')          AS parentId,
+        pa.is_administrator AS isAdministrator
+       	FROM crm_admin pa
+        Left JOIN crm_user_level pl   ON pa.level_id = pl.id
+        Left JOIN crm_user_dept pd    ON pl.dept_id = pd.id
+        Left JOIN crm_admin pa2       ON pa.parent_id = pa2.id
+        WHERE pa.id = #{id}
+    </select>
+
+
+    <select id="getParents" resultType="java.util.Map">
+        select pa.id,pa.username from crm_admin pa
+        LEFT JOIN crm_user_level pl ON pa.level_id = pl.id
+        LEFT JOIN crm_user_dept pd ON pd.id = pl.dept_id
+        where pa.status != 2
+        <if test="dept_id !=null and grade != null">
+            and pd.id=#{dept_id} AND pl.grade = #{grade}
+        </if>
+        <if test="admin_id != null">
+            and pa.id = #{admin_id}
+        </if>
+        <if test="parent_id != null">
+            and pa.parent_id = #{parent_id}
+        </if>
+        <if test="adminIds!=null">
+            AND pa.id IN
+            <foreach item="item" index="index" collection="adminIds"
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findLevelAndDeptByAdminId" resultType="java.util.Map">
+        SELECT
+            ud.id AS dept_id,
+            pa.level_id AS level_id
+        FROM
+            crm_admin pa
+        JOIN crm_user_level ul ON pa.level_id = ul.id
+        JOIN crm_user_dept  ud ON ud.id = ul.dept_id
+        where pa.id = #{id} and pa.status != 2
+    </select>
+    <select id="getSubordinateIdByParams" resultType="java.lang.Long">
+        SELECT
+        pa.id AS admin_id
+        FROM crm_admin pa
+        Left JOIN crm_user_level pl ON pa.level_id = pl.id
+        Left JOIN crm_user_dept pd ON pl.dept_id = pd.id
+        Left JOIN crm_admin pa2 ON pa.parent_id = pa2.id
+        WHERE pa.is_administrator = 0 and pa.status != 2
+        <if test="admin_id != null">
+            AND pa.parent_id IN
+            <foreach item="item" index="index" collection="admin_id"
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        AND pl.grade &lt; #{grade}
+        AND pd.id = #{dept_id}
+    </select>
+
+    <select id="getSubordinateIdByIds" resultType="java.lang.Long">
+        SELECT
+        pa.id AS admin_id
+        FROM crm_admin pa
+        where 1=1
+        <if test="admin_id != null">
+            AND pa.parent_id IN
+            <foreach item="item" index="index" collection="admin_id"
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findAdminsByDeptId" parameterType="java.util.Map" resultType="java.util.Map">
+          SELECT ca.id,
+          ifnull(ca.level_id,'') as level_id,
+          ca.username,
+          ifnull(ca.parent_id,'') as parent_id,
+          ca.email,
+          ca.mobile
+        FROM crm_admin ca
+        WHERE ca.level_id IN (
+        SELECT id
+        FROM crm_user_level cud
+        WHERE cud.dept_id = #{dept_id}) and ca.`status` = 1
+          LIMIT #{start},#{length}
+    </select>
+
+    <select id="countFindAdminsByDeptId" parameterType="java.util.Map" resultType="java.lang.Integer">
+         SELECT count(ca.id)
+        FROM crm_admin ca
+        WHERE ca.level_id IN (
+        SELECT id
+        FROM crm_user_level cud
+        WHERE cud.dept_id = #{dept_id}) and ca.`status` = 1
+
+    </select>
+
+    <select id="listServiceAdmin" resultType="java.util.Map" parameterType="java.util.Map" >
+        select
+        a.id,
+        a.level_id,
+        l.grade,
+        a.parent_id,
+        a.username,
+        a.email,
+        a.mobile,
+        a.status,
+        a.is_administrator,
+        date_format( a.create_time, '%Y-%m-%d %H:%i:%s') create_time,
+        date_format( a.update_time, '%Y-%m-%d %H:%i:%s') update_time,
+        d.id dept_id
+        from crm_admin a ,crm_user_level l,crm_user_dept d
+        where a.level_id=l.id and l.dept_id=d.id and a.status = 1
+        <if test="grade != null">
+            and l.grade = #{grade}
+        </if>
+        <if test="dept_id != null">
+            and d.id = #{dept_id}
+        </if>
+        <if test="parent_id != null">
+            and a.parent_id = #{parent_id}
+        </if>
+        <if test="user_id != null">
+            and a.id = #{user_id}
+        </if>
+    </select>
+
+
+</mapper>

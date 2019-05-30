@@ -1,0 +1,19 @@
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  profiles:
+    active: test
+  application:
+    name: kx-fram-admin
+    version: 1.0.0
+  output:
+    ansi:
+      enabled: always
+cors:
+  allow-origins: "*"
+
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*Mapper.xml
+  config-location: classpath:mybatis/mybatis-config.xml

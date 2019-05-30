@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.farm.admin.record.mapper.FarmingRecordMapper" >
+  <resultMap id="BaseResultMap" type="com.farm.base.record.FarmingRecord" >
+    <id column="id" property="id"  />
+    <result column="plot_crop_id" property="plotCropId"  />
+    <result column="farm_work_id" property="farmWorkId"  />
+    <result column="parent_id" property="parentId"  />
+    <result column="parent_record_id" property="parentRecordId"  />
+    <result column="farm_work_name" property="farmWorkName"  />
+    <result column="score" property="score"  />
+    <result column="remark" property="remark"  />
+    <result column="index_number" property="indexNumber"  />
+    <result column="time" property="time"  />
+    <result column="status" property="status"  />
+    <result column="assess_flag" property="assessFlag"  />
+    <result column="add_flag" property="addFlag"  />
+    <result column="type" property="type" />
+    <result column="category" property="category" />
+    <result column="appended_id" property="appendedId" />
+    <result column="create_time" property="createTime"  />
+    <result column="update_time" property="updateTime"  />
+  </resultMap>
+
+  <sql id="Base_Column_List" >
+    id, plot_crop_id, farm_work_id, parent_id, parent_record_id,farm_work_name, score,remark, index_number,
+    time, status, assess_flag, add_flag,type,category,appended_id,
+    create_time, update_time
+  </sql>
+
+  <select id="findById" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from farming_record
+    where id = #{id}
+  </select>
+
+  <select id="countScoreByPlotCropId" resultType="java.lang.Integer" parameterType="java.lang.Long" >
+    select  IFNULL(SUM(fr.score- IFNULL(0,ra.`deduct_marks`)),0 ) num
+    from farming_record fr
+    left join record_assess ra on fr.id=ra.record_id
+    where fr.status=2 and fr.category=0
+    and  fr.plot_crop_id=#{plotCropId}
+  </select>
+
+
+  <resultMap id="recordDTO" type="com.farm.admin.record.dto.RecordDTO" >
+    <id column="id" property="recordId"  />
+    <result column="plot_crop_id" property="plotCropId"  />
+    <result column="plot_name" property="plotName"  />
+    <result column="farm_name" property="farmName"  />
+    <result column="crop_name" property="cropName"  />
+    <result column="crop_variety" property="cropVariety"  />
+    <result column="farm_work_name" property="farmWorkName"  />
+    <result column="score" property="score"  />
+    <result column="remark" property="remark"  />
+    <result column="time" property="time"  />
+    <result column="status" property="status"  />
+    <result column="assess_flag" property="assessFlag"  />
+    <result column="update_time" property="updateTime"  />
+  </resultMap>
+
+
+
+  <select id="getNoEvaluationRecord" resultMap="recordDTO" parameterType="com.farm.admin.record.RecordParams" >
+    select
+    fr.id                   as id,
+    f.name                  as farm_name,
+    pc.plot_name            as plot_name,
+    pc.crop_name            as crop_name,
+    pc.`crop_variety`       as crop_variety,
+    fr.farm_work_name       as farm_work_name,
+    fr.time                 as time,
+    fr.update_time          as update_time,
+    fr.score                as score,
+    fr.remark               as remark,
+    fr.assess_flag          as assess_flag,
+    fr.`status`             as status
+    from farming_record fr , plot_crop pc ,plot p,farm f
+    where fr.plot_crop_id=pc.id and pc.plot_id =p.id and p.farm_id=f.id
+    and fr.category=0 and fr.assess_flag=0 and (fr.status=1 or fr.status=2)
+    <if test="plotCropId!=null">
+      and fr.`plot_crop_id`=#{plotCropId}
+    </if>
+    <if test="farmId!=null">
+      and p.farm_id=#{farmId}
+    </if>
+    <if test="plotId!=null">
+      and p.id=#{plotId}
+    </if>
+    <if test="cropId!=null">
+      and pc.crop_id=#{cropId}
+    </if>
+    order by fr.update_time desc
+    limit 1
+  </select>
+
+
+  <select id="listAllRecord" resultMap="recordDTO" parameterType="com.farm.admin.record.RecordParams" >
+    select
+    fr.id                   as id,
+    f.name                  as farm_name,
+    pc.plot_name            as plot_name,
+    pc.crop_name            as crop_name,
+    pc.`crop_variety`       as crop_variety,
+    fr.farm_work_name       as farm_work_name,
+    fr.time                 as time,
+    fr.update_time          as update_time,
+    fr.score                as score,
+    fr.remark               as remark,
+    fr.assess_flag          as assess_flag,
+    fr.`status`             as status
+    from farming_record fr , plot_crop pc ,plot p,farm f
+    where fr.plot_crop_id=pc.id and pc.plot_id =p.id and p.farm_id=f.id
+    and fr.category=0 and (fr.status=1 or fr.status=2)
+    <if test="plotCropId!=null">
+      and fr.`plot_crop_id`=#{plotCropId}
+    </if>
+    <if test="farmId!=null">
+      and p.farm_id=#{farmId}
+    </if>
+    <if test="plotId!=null">
+      and p.id=#{plotId}
+    </if>
+    <if test="cropId!=null">
+      and pc.crop_id=#{cropId}
+    </if>
+    order by fr.update_time desc
+  </select>
+
+
+
+  <select id="pagingRecord" resultMap="recordDTO" parameterType="com.farm.base.common.Page" >
+    select
+    fr.id                   as id,
+    f.name                  as farm_name,
+    pc.plot_name            as plot_name,
+    pc.crop_name            as crop_name,
+    pc.`crop_variety`       as crop_variety,
+    fr.farm_work_name       as farm_work_name,
+    fr.time                 as time,
+    fr.update_time          as update_time,
+    fr.score                as score,
+    fr.remark               as remark,
+    fr.assess_flag          as assess_flag,
+    fr.`status`             as status
+    from farming_record fr , plot_crop pc ,plot p,farm f
+    where fr.plot_crop_id=pc.id and pc.plot_id =p.id and p.farm_id=f.id
+    and fr.category=0 and (fr.status=1 or fr.status=2)
+    <if test="t.plotCropId!=null">
+      and fr.`plot_crop_id`=#{t.plotCropId}
+    </if>
+    <if test="t.farmId!=null">
+      and p.farm_id=#{t.farmId}
+    </if>
+    <if test="t.plotId!=null">
+      and p.id=#{t.plotId}
+    </if>
+    <if test="t.cropId!=null">
+      and pc.crop_id=#{t.cropId}
+    </if>
+    <if test="t.date!=null">
+      and YEAR(fr.create_time)=#{t.date}
+    </if>
+    order by fr.update_time desc
+    limit #{pageStart},#{pageSize}
+  </select>
+
+
+  <select id="countRecord" resultType="java.lang.Integer"  parameterType="com.farm.base.common.Page" >
+    select
+    count(*)
+    from farming_record fr , plot_crop pc ,plot p
+    where fr.plot_crop_id=pc.id and pc.plot_id =p.id
+    and fr.category=0 and (fr.status=1 or fr.status=2)
+    <if test="t.plotCropId!=null">
+      and fr.`plot_crop_id`=#{t.plotCropId}
+    </if>
+    <if test="t.farmId!=null">
+      and p.farm_id=#{t.farmId}
+    </if>
+    <if test="t.plotId!=null">
+      and p.id=#{t.plotId}
+    </if>
+    <if test="t.cropId!=null">
+      and pc.crop_id=#{t.cropId}
+    </if>
+    <if test="t.date!=null">
+      and YEAR(fr.create_time)=#{t.date}
+    </if>
+
+  </select>
+
+
+  <delete id="delete" parameterType="java.lang.Long" >
+    delete from farming_record
+    where id = #{id}
+  </delete>
+
+  <insert id="insert" parameterType="com.farm.base.record.FarmingRecord" useGeneratedKeys="true" keyProperty="id">
+    insert into farming_record
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="plotCropId != null" >
+        plot_crop_id,
+      </if>
+      <if test="farmWorkId != null" >
+        farm_work_id,
+      </if>
+      <if test="parentId != null" >
+        parent_id,
+      </if>
+      <if test="parentRecordId != null" >
+        parent_record_id,
+      </if>
+      <if test="farmWorkName != null" >
+        farm_work_name,
+      </if>
+      <if test="score != null" >
+        score,
+      </if>
+      <if test="remark != null" >
+        remark,
+      </if>
+      <if test="indexNumber != null" >
+        index_number,
+      </if>
+      <if test="time != null" >
+        time,
+      </if>
+      <if test="status != null" >
+        status,
+      </if>
+      <if test="assessFlag != null" >
+        assess_flag,
+      </if>
+      <if test="addFlag != null" >
+        add_flag,
+      </if>
+      <if test="type != null" >
+        type,
+      </if>
+      <if test="category != null" >
+        category,
+      </if>
+      <if test="appendedId != null" >
+        appended_id,
+      </if>
+      <if test="createTime != null" >
+        create_time,
+      </if>
+      <if test="updateTime != null" >
+        update_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id},
+      </if>
+      <if test="plotCropId != null" >
+        #{plotCropId},
+      </if>
+      <if test="farmWorkId != null" >
+        #{farmWorkId},
+      </if>
+      <if test="parentId != null" >
+        #{parentId},
+      </if>
+      <if test="parentRecordId != null" >
+        #{parentRecordId},
+      </if>
+      <if test="farmWorkName != null" >
+        #{farmWorkName},
+      </if>
+      <if test="score != null" >
+        #{score},
+      </if>
+      <if test="remark != null" >
+        #{remark},
+      </if>
+      <if test="indexNumber != null" >
+        #{indexNumber},
+      </if>
+      <if test="time != null" >
+        #{time},
+      </if>
+      <if test="status != null" >
+        #{status},
+      </if>
+      <if test="assessFlag != null" >
+        #{assessFlag},
+      </if>
+      <if test="addFlag != null" >
+        #{addFlag},
+      </if>
+      <if test="type != null" >
+        #{type},
+      </if>
+      <if test="category != null" >
+        #{category},
+      </if>
+      <if test="appendedId != null" >
+        #{appendedId},
+      </if>
+      <if test="createTime != null" >
+        #{createTime},
+      </if>
+      <if test="updateTime != null" >
+        #{updateTime},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="update" parameterType="com.farm.base.record.FarmingRecord" >
+    update farming_record
+    <set >
+      <if test="plotCropId != null" >
+        plot_crop_id = #{plotCropId},
+      </if>
+      <if test="farmWorkId != null" >
+        farm_work_id = #{farmWorkId},
+      </if>
+      <if test="parentId != null" >
+        parent_id = #{parentId},
+      </if>
+      <if test="parentRecordId != null" >
+        parent_record_id = #{parentRecordId},
+      </if>
+      <if test="farmWorkName != null" >
+        farm_work_name = #{farmWorkName},
+      </if>
+      <if test="score != null" >
+        score = #{score},
+      </if>
+      <if test="remark != null" >
+        remark = #{remark},
+      </if>
+      <if test="indexNumber != null" >
+        index_number = #{indexNumber},
+      </if>
+      <if test="time != null" >
+        time = #{time},
+      </if>
+      <if test="status != null" >
+        status = #{status},
+      </if>
+      <if test="assessFlag != null" >
+        assess_flag=#{assessFlag},
+      </if>
+      <if test="addFlag != null" >
+        add_flag=#{addFlag},
+      </if>
+      <if test="type != null" >
+        type= #{type},
+      </if>
+      <if test="category != null" >
+        category= #{category},
+      </if>
+      <if test="appendedId != null" >
+        appended_id= #{appendedId},
+      </if>
+      <if test="createTime != null" >
+        create_time = #{createTime},
+      </if>
+      <if test="updateTime != null" >
+        update_time = #{updateTime},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+
+
+</mapper>

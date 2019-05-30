@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.farm.admin.record.mapper.CropTaskMapper" >
+  <resultMap id="BaseResultMap" type="com.farm.base.record.CropTask" >
+    <id column="id" property="id" />
+    <result column="crop_id" property="cropId"  />
+    <result column="farming_id" property="farmingId"  />
+    <result column="farming_name" property="farmingName"  />
+    <result column="parent_id" property="parentId"  />
+    <result column="number" property="number" />
+    <result column="score" property="score" />
+    <result column="admin_id" property="adminId" />
+    <result column="type" property="type" />
+    <result column="category" property="category" />
+    <result column="create_time" property="createTime" />
+    <result column="update_time" property="updateTime" />
+  </resultMap>
+  <!--sha-->
+  <sql id="Base_Column_List" >
+    id, crop_id, farming_id, farming_name, parent_id,number, score, admin_id,type,category,create_time, update_time
+  </sql>
+
+  <resultMap id="cropTaskDTO" type="com.farm.admin.record.dto.CropTaskDTO" >
+    <id column="task_id" property="taskId" />
+    <result column="crop_id" property="cropId"  />
+    <result column="farming_id" property="farmingId"  />
+    <result column="parent_id" property="parentId"  />
+    <result column="farming_name" property="farmingName"  />
+    <result column="crop_name" property="cropName"  />
+    <result column="number" property="number" />
+    <result column="score" property="score" />
+    <result column="update_time" property="updateTime" />
+  </resultMap>
+
+  <select id="findById" resultMap="cropTaskDTO" parameterType="java.lang.Long" >
+    select
+    ct.id                   as task_id,
+    c.name                  as crop_name,
+    c.id                    as crop_id,
+    ct.farming_name         as farming_name,
+    ct.farming_id           as farming_id,
+    fw.parent_id            as parent_id,
+    ct.number               as number,
+    ct.score                as score,
+    ct.update_time          as update_time
+    from crop_task ct ,crop c, farm_work fw
+    where ct.crop_id=c.id and ct.`farming_id`=fw.`id`
+    and ct.id = #{id}
+  </select>
+
+  <delete id="delete" parameterType="java.lang.Long" >
+    delete from crop_task
+    where id = #{id}
+  </delete>
+
+  <select id="pagingCropTask" resultMap="cropTaskDTO" parameterType="com.farm.base.common.Page">
+    select
+    ct.id                   as task_id,
+    c.name                  as crop_name,
+    c.id                    as crop_id,
+    ct.farming_name         as farming_name,
+    ct.farming_id           as farming_id,
+    fw.parent_id            as parent_id,
+    ct.number               as number,
+    ct.score                as score,
+    ct.update_time          as update_time
+    from crop_task ct ,crop c, farm_work fw
+    where ct.crop_id=c.id and ct.`farming_id`=fw.`id`
+    <if test="t.cropId!=null and t.cropId!='' ">
+      and ct.crop_id=#{t.cropId}
+    </if>
+    ORDER BY number
+    LIMIT #{pageStart}, #{pageSize}
+  </select>
+
+  <select id="countCropTask" resultType="java.lang.Integer" parameterType="com.farm.admin.record.CropTaskParams">
+    select
+    count(*)
+    from crop_task ct ,crop c, farm_work fw
+    where ct.crop_id=c.id and ct.`farming_id`=fw.`id`
+    <if test="cropId!=null and cropId!='' ">
+      and ct.crop_id=#{cropId}
+    </if>
+  </select>
+
+  <insert id="insert" parameterType="com.farm.base.record.CropTask" >
+    insert into crop_task
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="cropId != null" >
+        crop_id,
+      </if>
+      <if test="farmingId != null" >
+        farming_id,
+      </if>
+      <if test="farmingName != null" >
+        farming_name,
+      </if>
+      <if test="parentId != null" >
+        parent_id,
+      </if>
+      <if test="number != null" >
+        number,
+      </if>
+      <if test="score != null" >
+        score,
+      </if>
+      <if test="adminId != null" >
+        admin_id,
+      </if>
+      <if test="type != null" >
+        type,
+      </if>
+      <if test="category != null" >
+        category,
+      </if>
+      <if test="createTime != null" >
+        create_time,
+      </if>
+      <if test="updateTime != null" >
+        update_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id},
+      </if>
+      <if test="cropId != null" >
+        #{cropId},
+      </if>
+      <if test="farmingId != null" >
+        #{farmingId},
+      </if>
+      <if test="farmingName != null" >
+        #{farmingName},
+      </if>
+      <if test="parentId != null" >
+        #{parentId},
+      </if>
+      <if test="number != null" >
+        #{number},
+      </if>
+      <if test="score != null" >
+        #{score},
+      </if>
+      <if test="adminId != null" >
+        #{adminId},
+      </if>
+      <if test="type != null" >
+        #{type},
+      </if>
+      <if test="category != null" >
+        #{category},
+      </if>
+      <if test="createTime != null" >
+        #{createTime},
+      </if>
+      <if test="updateTime != null" >
+        #{updateTime},
+      </if>
+    </trim>
+  </insert>
+
+
+  <update id="update" parameterType="com.farm.base.record.CropTask" >
+    update crop_task
+    <set >
+      <if test="cropId != null" >
+        crop_id = #{cropId},
+      </if>
+      <if test="farmingId != null" >
+        farming_id = #{farmingId},
+      </if>
+      <if test="farmingName != null" >
+        farming_name = #{farmingName},
+      </if>
+      <if test="parentId != null" >
+       parent_id= #{parentId},
+      </if>
+      <if test="number != null" >
+        number = #{number},
+      </if>
+      <if test="score != null" >
+        score = #{score},
+      </if>
+      <if test="adminId != null" >
+        admin_id = #{adminId},
+      </if>
+      <if test="type != null" >
+        type= #{type},
+      </if>
+      <if test="category != null" >
+        category= #{category},
+      </if>
+      <if test="createTime != null" >
+        create_time = #{createTime},
+      </if>
+      <if test="updateTime != null" >
+        update_time = #{updateTime},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+
+</mapper>

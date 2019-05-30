@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.farm.admin.admin.mapper.PermissionMapper">
+
+    <resultMap id="baseResultMap" type="com.farm.admin.admin.Permission">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="path" property="stateRef"/>
+        <result column="icon" property="icon"/>
+        <result column="order" property="order"/>
+        <result column="is_menu" property="isMenu"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, description, parent_id, state_ref , icon, `order`, is_menu, status, create_time,
+        update_time
+    </sql>
+
+    <select id="findAllByAdmin" resultType="java.util.Map">
+        SELECT
+        p.ID AS "id",
+        p.description AS "title",
+        IFNULL(p.order,"") AS "order" ,
+        IFNULL(p.parent_id,"") AS "pid",
+        IFNULL(p.state_ref,"") AS "state_ref",
+        IFNULL(p.icon,"") AS "icon"
+        FROM
+        crm_permission p
+        where p.is_menu = 0
+        and (p.status = 0 or p.status = 2)
+    </select>
+
+    <select id="findAllByUserId" resultType="java.util.Map">
+        SELECT
+        p.ID AS "id",
+        p.description AS "title",
+        IFNULL(p.order,"") AS "order" ,
+        IFNULL(p.parent_id,"") AS "pid",
+        IFNULL(p.state_ref,"") AS "state_ref",
+        IFNULL(p.icon,"") AS "icon"
+        FROM
+        crm_role_permission rp,
+        crm_permission p
+        WHERE
+        p.id = rp.permission_id
+        and rp.user_id = #{userId}
+        and p.is_menu = 0
+        and p.status = 0
+    </select>
+
+    <select id="findAllPermission" resultType="java.util.Map">
+        SELECT
+        p.id AS id,
+        IFNULL(p.parent_id,'') AS parent_id,
+        p.description AS description,
+        p.is_menu AS is_menu,
+        IFNULL(p.order,"") AS "order" ,
+        'false' AS checked
+        FROM crm_permission p
+        where p.status = 0
+    </select>
+
+    <select id="findHasByDeptId" resultType="java.util.Map">
+        SELECT
+        p.id AS id,
+        IFNULL(p.parent_id,'') AS parent_id,
+        p.description AS description,
+        IFNULL(p.order,"") AS "order" ,
+        'true' AS checked
+        FROM
+        crm_permission p
+        LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+        WHERE
+        p2.dept_id = #{deptId} and p.status = 0
+    </select>
+
+
+    <select id="findNoHasByPerId" resultType="java.util.Map">
+        SELECT
+        p.id AS id,
+        IFNULL(p.parent_id,'') AS parent_id,
+        p.description AS description,
+        IFNULL(p.order,"") AS "order" ,
+        'false' AS checked
+        FROM crm_permission p
+        where p.status = 0 and p.id NOT IN
+        <foreach item="permissions" index="index_p" collection="permissions"
+                 open="(" separator="," close=")">
+            #{permissions}
+        </foreach>
+    </select>
+
+    <select id="findHasByUserId" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+        p.id AS id,
+        IFNULL(p.parent_id, '') AS parent_id,
+        p.description AS description,
+        IFNULL(p.order,"") AS "order" ,
+        'true' AS checked
+        FROM
+        crm_permission p
+        LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+        WHERE
+        p. STATUS = 0
+        AND p2.user_id = #{user_id}
+    </select>
+    <select id="findNoHasByUserId" resultType="java.util.Map" parameterType="java.util.Map">
+       SELECT
+        p.id AS id,
+        IFNULL(p.parent_id, '') AS parent_id,
+        p.description AS description,
+        IFNULL(p.order,"") AS "order" ,
+        'false' AS checked
+        FROM
+        crm_permission p
+        LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+        WHERE
+        p2.dept_id =  #{dept_id}
+        AND p. STATUS = 0
+        AND p.id NOT IN (
+        SELECT
+        p.id AS id
+        FROM
+        crm_permission p
+        LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+        WHERE
+        p. STATUS = 0
+        AND p2.user_id =  #{user_id}
+        )
+    </select>
+
+    <select id="getUserPermissionByParent" resultType="java.util.Map">
+        SELECT
+            p.id AS id,
+            IFNULL(p.parent_id, '') AS parent_id,
+            p.description AS description,
+            IFNULL(p.order,"") AS "order" ,
+            'false' AS checked
+        FROM
+            crm_permission p
+        LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+        WHERE
+            p. STATUS = 0
+            AND p2.user_id = #{parent_id}
+        AND p.id NOT IN (
+            SELECT
+                p.id AS id
+            FROM
+                crm_permission p
+            LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+            WHERE
+                p. STATUS = 0
+            AND p2.user_id = #{user_id}
+        )
+        UNION ALL
+            SELECT
+                p.id AS id,
+                IFNULL(p.parent_id, '') AS parent_id,
+                p.description AS description,
+                IFNULL(p.order,"") AS "order" ,
+                'true' AS checked
+            FROM
+                crm_permission p
+            LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+            WHERE
+                p. STATUS = 0
+            AND p2.user_id = #{user_id}
+            AND p.id IN (
+                SELECT
+                    p.id AS id
+                FROM
+                    crm_permission p
+                LEFT JOIN crm_role_permission p2 ON p.id = p2.permission_id
+                WHERE
+                    p. STATUS = 0
+                AND p2.user_id =  #{parent_id}
+            )
+    </select>
+
+    <select id="findById" resultMap="baseResultMap" parameterType="java.lang.Long">
+        select
+        <include refid="Base_Column_List"/>
+        from crm_permission
+        where id = #{id}
+    </select>
+    <delete id="delete" parameterType="java.lang.Long">
+        delete from crm_permission
+        where id = #{id}
+    </delete>
+    <insert id="insert" parameterType="com.farm.admin.admin.Permission">
+        insert into crm_permission
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="description != null">
+                description,
+            </if>
+            <if test="parentId != null">
+                parent_id,
+            </if>
+            <if test="stateRef != null">
+                state_ref,
+            </if>
+            <if test="icon != null">
+                icon,
+            </if>
+            <if test="order != null">
+                `order`,
+            </if>
+            <if test="isMenu != null">
+                is_menu,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id},
+            </if>
+            <if test="name != null">
+                #{name},
+            </if>
+            <if test="description != null">
+                #{description},
+            </if>
+            <if test="parentId != null">
+                #{parentId},
+            </if>
+            <if test="stateRef != null">
+                #{stateRef},
+            </if>
+            <if test="icon != null">
+                #{icon},
+            </if>
+            <if test="order != null">
+                #{order},
+            </if>
+            <if test="isMenu != null">
+                #{isMenu},
+            </if>
+            <if test="status != null">
+                #{status},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByParams" parameterType="com.farm.admin.admin.Permission">
+        update crm_permission
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="stateRef != null">
+                state_ref = #{stateRef},
+            </if>
+            <if test="icon != null">
+                icon = #{icon},
+            </if>
+            <if test="order != null">
+                `order` = #{order},
+            </if>
+            <if test="isMenu != null">
+                is_menu = #{isMenu},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="listByPaging" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+        id, name, description, parent_id, state_ref , icon, `order`, is_menu, status,
+        DATE_FORMAT(p.update_time,"%Y-%m-%d %T") as update_time,
+        DATE_FORMAT(p.create_time,"%Y-%m-%d %T") as create_time
+        FROM crm_permission p
+        WHERE 1=1
+        <if test="description != null and description != ''">
+            AND p.description LIKE CONCAT('%',#{description},'%')
+        </if>
+        <if test="parent_id != null and parent_id != ''">
+            AND p.parent_id = #{parent_id}
+        </if>
+        <if test="start_time !=null and start_time!='' and end_time !=null and end_time!=''">
+            <![CDATA[ AND p.create_time  >= #{start_time}]]>
+            <![CDATA[ AND p.create_time  <= #{end_time}]]>
+        </if>
+        <if test="order_column != null">
+            ORDER BY ${order_column}
+        </if>
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="countListByPaging" resultType="java.lang.Integer" parameterType="java.util.Map">
+        SELECT
+        count(p.id)
+        FROM crm_permission p
+        WHERE 1=1
+        <if test="description != null and description != ''">
+            AND p.description LIKE CONCAT('%',#{description},'%')
+        </if>
+        <if test="parent_id != null and parent_id != ''">
+            AND p.parent_id = #{parent_id}
+        </if>
+        <if test="start_time !=null and start_time!='' and end_time !=null and end_time!=''">
+            <![CDATA[ AND p.create_time  >= #{start_time}]]>
+            <![CDATA[ AND p.create_time  <= #{end_time}]]>
+        </if>
+    </select>
+</mapper>
